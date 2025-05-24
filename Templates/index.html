@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NehanGPT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+    <script src="https://kit.fontawesome.com/0a02fbb60a.js" crossorigin="anonymous"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            background-color: #000000;
+            color: #fff;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Security - prevent XSS */
+        * {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        input,
+        textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        /* Security - sanitize URLs */
+        img[src] {
+            pointer-events: auto;
+        }
+
+        /* Prevent text overflow attacks */
+        .text-truncate {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: rgba(17, 17, 17, 0.98);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1.5rem;
+            z-index: 1000;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #sidebar.collapsed {
+            transform: translateX(-280px);
+        }
+
+        #sidebar .chat-history {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin: 4px 0;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #sidebar .chat-history:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        #sidebar .chat-history p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        #sidebar .account-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #sidebar .account-pill:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(224, 118, 2, 0.4);
+            transform: translateY(-1px);
+        }
+
+        #sidebar .account-pill .profile-img {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid rgba(224, 118, 2, 0.3);
+        }
+
+        #sidebar .account-pill .account-type {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 2px;
+        }
+
+        #sidebar #new-chat-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #E07602, #CC4604);
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(204, 70, 4, 0.1);
+        }
+
+        #sidebar #new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(204, 70, 4, 0.2);
+        }
+
+        #sidebar #new-chat-btn i {
+            transition: transform 0.2s ease;
+        }
+
+        #sidebar #new-chat-btn:hover i {
+            transform: rotate(90deg);
+        }
+
+        /* Content Area */
+        #content {
+            margin-left: 280px;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+            position: relative;
+            padding: 2rem;
+        }
+
+        #content nav {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+        }
+
+        #content.expanded {
+            margin-left: 0;
+        }
+
+        #sidebar.collapsed~#content {
+            margin-left: 0;
+        }
+
+        /* Adjust chat input position when sidebar is collapsed */
+        #sidebar.collapsed~#content .chat-input-container {
+            left: 50%;
+            width: calc(100% - 60px);
+        }
+
+        /* Chat Messages */
+        .chat-message {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+
+        .user-chat {
+            background: rgba(204, 70, 4, 0.1);
+            border: 1px solid rgba(204, 70, 4, 0.2);
+            margin-left: auto;
+        }
+
+        .bot-chat {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-right: auto;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            padding: 2rem;
+            /* background: rgba(0, 0, 0, 0.4); */
+            border-radius: 16px;
+            /* backdrop-filter: blur(12px); */
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .welcome-content {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 2rem;
+            /* background: rgba(255, 255, 255, 0.05); */
+            /* border: 1px solid rgba(255, 255, 255, 0.1); */
+            border-radius: 12px;
+            color: white;
+        }
+
+        .welcome-screen h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* -webkit-text-fill-color: transparent; */
+        }
+
+        .welcome-screen p {
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: 500;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-icon i {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #E07602, #CC4604);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 100%;
+                transform: translateX(-100%);
+            }
+
+            #content {
+                margin-left: 0;
+            }
+
+            .chat-input-container {
+                left: 50% !important;
+                width: calc(100% - 2rem) !important;
+                bottom: 1rem;
+            }
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            /* position: fixed;
+            bottom: 2rem;
+            left: calc(50% + 140px); */
+            /* Half of content width plus half of sidebar width */
+            /* transform: translateX(-50%); */
+            /* width: calc(100% - 340px); */
+            width: 100%;
+            /* Adjusted to account for sidebar */
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.25rem;
+            z-index: 100;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0 auto;
+
+        }
+
+        /* Chat input styling */
+        #chat-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            line-height: 1.5;
+            width: 100%;
+            height: auto;
+            min-height: 48px;
+            max-height: 150px;
+        }
+
+        #chat-input:focus {
+            outline: none;
+            border-color: #CC4604;
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 0 2px rgba(204, 70, 4, 0.2);
+        }
+
+        #chat-input:focus {
+            outline: none;
+            border-color: #CC4604;
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 0 2px rgba(204, 70, 4, 0.2);
+        }
+
+        .chat-input-container input:focus {
+            outline: none;
+            border-color: #CC4604;
+            box-shadow: 0 0 0 2px rgba(204, 70, 4, 0.2);
+        }
+
+        .chat-input-container button {
+            background: linear-gradient(135deg, #E07602, #CC4604);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin-left: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input-container button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(204, 70, 4, 0.2);
+        }
+
+        /* Welcome hint styling */
+        .welcome-hint {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        /* Responsive adjustments for welcome screen */
+        @media (max-width: 768px) {
+            .welcome-screen {
+                min-height: 60vh;
+                padding: 1rem;
+            }
+
+            .welcome-content {
+                padding: 1.5rem;
+            }
+
+            .welcome-screen h1 {
+                font-size: 2.2rem;
+            }
+
+            .welcome-screen p {
+                font-size: 1.1rem;
+            }
+
+            .welcome-icon i {
+                font-size: 3.5rem;
+            }
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            padding: 5px;
+            display: inline-block;
+            color: #fff;
+        }
+
+        .upload-btn-container {
+            text-align: left;
+            margin-top: 10px;
+            color: white;
+        }
+    </style>
+</head>
+
+<body><!-- Sidebar -->
+    <div id="sidebar">
+        <div class="d-flex flex-column h-100">
+            <button id="new-chat-btn" class="btn btn-custom w-100 mb-3">
+                <i class="fa-solid fa-plus me-2"></i>New Chat
+            </button>
+            <div class="account-pill d-flex align-items-center gap-3 mb-4">
+                <img src="{{ url_for('static', filename=user.profile_pic) }}" alt="Profile" class="profile-img"
+                    onerror="this.src='/static/Assets/Icons/default-avatar.jpg';">
+                <div class="flex-grow-1">
+                    <div class="fw-medium text-white text-truncate">{{ session.name.split('@')[0] }}</div>
+                    <div class="account-type d-flex align-items-center">
+                        <i class="fas fa-crown me-1" style="color: #E07602;"></i>
+                        {{ session.account_type or "Free" }}
+                    </div>
+                </div>
+                <div class="dropdown"> <button class="btn text-white p-1 opacity-75 hover-opacity-100" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+
+                        <li><a class="dropdown-item" href="{{ url_for('settings') }}"><i
+                                    class="fa-solid fa-gear me-2"></i>Settings</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item delete-option" href="{{ url_for('logout') }}"><i
+                                    class="fa-solid fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="chat-history-container flex-grow-1 overflow-auto mt-2">
+                <h6 class="text-white-50 fw-medium mb-3 px-2 d-flex align-items-center">
+                    <i class="fas fa-history me-2"></i>Chat History
+                </h6>
+                {% for session in chat_sessions %}
+                <div class="chat-history d-flex align-items-center justify-content-between mb-2 p-2"
+                    title="{{ session.title }}">
+                    <button class="load-session-btn btn text-white text-start flex-grow-1 px-2"
+                        data-session-id="{{ session._id }}">
+                        <i class="fa-regular fa-message me-2"></i>
+                        <span class="text-truncate">{{ session.title }}</span>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn text-white p-1" type="button" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"
+                                    onclick="editTitle('{{ session._id }}', '{{ session.title }}')">
+                                    <i class="fa-solid fa-pen me-2"></i>Rename
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item delete-option" href="#"
+                                    onclick="deleteSession('{{ session._id }}')">
+                                    <i class="fa-solid fa-trash me-2"></i>Delete
+                                </a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Page Content -->
+    <div id="content" style="background-color:#000000">
+        <nav class="navbar px-4 shadow-sm border-bottom">
+            <button class="btn text-light" id="toggleBtn">
+                <!-- Sidebar toggle icon -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    class="icon-xl-heavy max-md:hidden">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M8.85719 3L13.5 3C14.0523 3 14.5 3.44772 14.5 4C14.5 4.55229 14.0523 5 13.5 5H11.5V19H15.1C16.2366 19 17.0289 18.9992 17.6458 18.9488C18.2509 18.8994 18.5986 18.8072 18.862 18.673C19.4265 18.3854 19.8854 17.9265 20.173 17.362C20.3072 17.0986 20.3994 16.7509 20.4488 16.1458C20.4992 15.5289 20.5 14.7366 20.5 13.6V11.5C20.5 10.9477 20.9477 10.5 21.5 10.5C22.0523 10.5 22.5 10.9477 22.5 11.5V13.6428C22.5 14.7266 22.5 15.6008 22.4422 16.3086C22.3826 17.0375 22.2568 17.6777 21.955 18.27C21.4757 19.2108 20.7108 19.9757 19.77 20.455C19.1777 20.7568 18.5375 20.8826 17.8086 20.9422C17.1008 21 16.2266 21 15.1428 21H8.85717C7.77339 21 6.89925 21 6.19138 20.9422C5.46253 20.8826 4.82234 20.7568 4.23005 20.455C3.28924 19.9757 2.52433 19.2108 2.04497 18.27C1.74318 17.6777 1.61737 17.0375 1.55782 16.3086C1.49998 15.6007 1.49999 14.7266 1.5 13.6428V10.3572C1.49999 9.27341 1.49998 8.39926 1.55782 7.69138C1.61737 6.96253 1.74318 6.32234 2.04497 5.73005C2.52433 4.78924 3.28924 4.02433 4.23005 3.54497C4.82234 3.24318 5.46253 3.11737 6.19138 3.05782C6.89926 2.99998 7.77341 2.99999 8.85719 3ZM9.5 19V5H8.9C7.76339 5 6.97108 5.00078 6.35424 5.05118C5.74907 5.10062 5.40138 5.19279 5.13803 5.32698C4.57354 5.6146 4.1146 6.07354 3.82698 6.63803C3.69279 6.90138 3.60062 7.24907 3.55118 7.85424C3.50078 8.47108 3.5 9.26339 3.5 10.4V13.6C3.5 14.7366 3.50078 15.5289 3.55118 16.1458C3.60062 16.7509 3.69279 17.0986 3.82698 17.362C4.1146 17.9265 4.57354 18.3854 5.13803 18.673C5.40138 18.8072 5.74907 18.8994 6.35424 18.9488C6.97108 18.9992 7.76339 19 8.9 19H9.5ZM5 8.5C5 7.94772 5.44772 7.5 6 7.5H7C7.55229 7.5 8 7.94772 8 8.5C8 9.05229 7.55229 9.5 7 9.5H6C5.44772 9.5 5 9.05229 5 8.5ZM5 12C5 11.4477 5.44772 11 6 11H7C7.55229 11 8 11.4477 8 12C8 12.5523 7.55229 13 7 13H6C5.44772 13 5 12.5523 5 12Z"
+                        fill="currentColor"></path>
+                    <circle cx="20" cy="5" r="4" fill="#0285FF"></circle>
+                </svg>
+            </button>
+
+            <div class="d-flex justify-content-center align-items-center flex-grow-1">
+                <p style="font-size:30px; color: white;"><i class="fa-solid fa-robot"></i>
+                    <span style="font-size: 22px; padding-left: 10px;">NehanGPT</span>
+                </p>
+            </div>
+
+            {% if session.email %}
+            <!-- Profile Dropdown if logged in -->
+            <div class="dropdown">
+
+                <!-- <i class="fa-solid fa-user"></i> -->
+                <img id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false"
+                    src="{{ url_for('static', filename=user.profile_pic) }}" alt="Profile" width="30px"
+                    style="border-radius: 100%; cursor: pointer;" class="profile-img"
+                    onerror="this.src='/static/Assets/Icons/default-avatar.jpg';">
+
+                <div class="dropdown-menu dropdown-menu-end">
+                    <div>
+                        <h6 class="dropdown-header">Hello, {{ session.name.split('@')[0] }}</h6>
+                    </div>
+                    <div class="dropdown-item"><a style="text-decoration: none; color: black;"
+                            href="{{ url_for('settings') }}"><i class="fa-solid fa-gear me-2"></i>Settings</a>
+                    </div>
+                    <div>
+                        <hr class="dropdown-divider">
+                    </div>
+                    <div class="dropdown-item delete-option"><a style="text-decoration: none; color: red;"
+                            href="{{ url_for('logout') }}"><i class="fa-solid fa-sign-out-alt me-2"></i>Logout</a></div>
+                </div>
+
+            </div>
+            {% else %}
+            <!-- Login/Register buttons if not logged in -->
+            <div>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-light me-2">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-light">Register</a>
+            </div>
+            {% endif %}
+
+
+        </nav>
+        <main class="d-flex flex-column " style="height: calc(100vh - 64px); width: 100%;"> <!-- Chat Container -->
+            <div class="chat-container flex-grow-1 px-4 overflow-auto">
+                <div id="chat-container" class="d-flex flex-column gap-4 pb-32 pt-4" style="padding-bottom: 120px;">
+                    <!-- Messages will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <form id="chat-form" class="chat-input-container">
+                <div class="d-flex gap-2">
+                    <div class="flex-grow-1 position-relative">
+                        <input type="text" class="form-control" id="chat-input" placeholder="Ask NehanGPT anything...">
+                    </div>
+                    <button type="submit" class="btn btn-custom d-flex align-items-center justify-content-center">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="upload-btn-container">
+                    <div class="glassmorphism">
+                        <input type="file" id="file-upload" class="d-none">
+                        <label for="file-upload" class="btn btn-link">
+                            <i class="fas fa-upload" style="color: grey;"></i>
+                        </label>
+                    </div>
+                </div>
+            </form>
+
+        </main>
+    </div>
+    </div>
+    <script>
+        // Auto-resize textarea
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggleBtn');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const input = document.getElementById("chat-input");
+
+            input.addEventListener("keydown", function (e) {
+                // Check if the pressed key is the spacebar
+                if (e.key === " ") {
+                    // Ensure the spacebar is not prevented
+                    e.stopPropagation();
+                }
+            });
+        });
+    </script>
+    <script>
+        // Security - Sanitize user input
+        function sanitizeInput(input) {
+            return input.replace(/[<>]/g, '').trim();
+        }
+
+        // Security - Validate session ID
+        function isValidSessionId(id) {
+            return /^[a-f0-9]{24}$/.test(id);
+        }
+
+        // Security - Rate limiting
+        const rateLimiter = {
+            lastMessageTime: 0,
+            minInterval: 500, // 500ms between messages
+            check: function () {
+                const now = Date.now();
+                if (now - this.lastMessageTime < this.minInterval) {
+                    return false;
+                }
+                this.lastMessageTime = now;
+                return true;
+            }
+        };
+
+        // Global variable to track current session
+        let currentSessionId = null;
+
+        // Start a new chat session
+        async function startNewChat() {
+            try {
+                const response = await fetch("/new_chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentSessionId = data.session_id;
+
+                    // Clear the chat container
+                    const chatBox = document.getElementById("chat-container");
+                    chatBox.innerHTML = "";
+
+                    // Show welcome message for new chat
+                    showWelcomeMessage();
+
+                    console.log("New chat session started:", currentSessionId);
+                } else {
+                    console.error("Failed to start new chat:", data.error);
+                }
+            } catch (error) {
+                console.error("Error starting new chat:", error);
+            }
+        }            // Show welcome message immediately when the page loads
+        window.addEventListener('DOMContentLoaded', function () {
+            showWelcomeMessage();
+        }); function showWelcomeMessage() {
+            const chatBox = document.getElementById("chat-container");
+            if (!chatBox) return;
+
+            // Clear any existing content
+            chatBox.innerHTML = '';
+
+            const welcomeMsg = document.createElement("div");
+            welcomeMsg.id = "welcomeMessage";
+            welcomeMsg.className = "welcome-screen fade-in";
+            welcomeMsg.innerHTML = `
+                <div class="welcome-content">
+                    <div class="welcome-icon">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h1>Welcome to NehanGPT</h1>
+                    <p>I'm your AI assistant, ready to help you with any questions or tasks. Feel free to start a conversation!</p>
+                    <div class="welcome-hint">
+                        <i class="fas fa-keyboard me-2" style="color: #E07602;"></i>
+                        <small style="color: rgba(255, 255, 255, 0.7);">Type your message below to begin</small>
+                    </div>
+                </div>
+            `;
+            chatBox.appendChild(welcomeMsg);
+        }
+
+        // Load chat history for a specific session
+        async function loadChatHistory(sessionId) {
+            try {
+                const response = await fetch(`/chat_history/${sessionId}`);
+                const data = await response.json();
+
+                if (data.session_info && data.messages) {
+                    currentSessionId = sessionId;
+
+                    // Clear chat container
+                    const chatBox = document.getElementById("chat-container");
+                    chatBox.innerHTML = "";
+
+                    // Display all messages
+                    data.messages.forEach(msg => {
+                        displayMessage(msg.content, msg.message_type);
+                    });
+
+                    // Scroll to bottom
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    console.log("Loaded chat history for session:", sessionId);
+                } else {
+                    console.error("Failed to load chat history:", data.error);
+                }
+            } catch (error) {
+                console.error("Error loading chat history:", error);
+            }
+        }
+
+        // Display a message in the chat container
+        function displayMessage(content, messageType) {
+            const chatBox = document.getElementById("chat-container"); if (messageType === "user") {
+                const userMsg = document.createElement("div");
+                userMsg.className = "chat-message user-chat fade-in";
+                userMsg.innerHTML = `
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="message-avatar">
+                                <i class="fas fa-user-circle fa-lg"></i>
+                            </div>
+                            <div class="message-content">${content}</div>
+                        </div>
+                    `;
+                chatBox.appendChild(userMsg);
+            } else if (messageType === "bot") {
+                const botMsg = document.createElement("div");
+                botMsg.className = "chat-message bot-chat fade-in";
+                botMsg.innerHTML = `
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot fa-lg"></i>
+                            </div>
+                            <div class="message-content">${marked.parse(content || "No reply")}</div>
+                        </div>
+                    `;
+                chatBox.appendChild(botMsg);
+            }
+        }
+
+        // Show thinking indicator
+        function showThinkingIndicator() {
+            const chatBox = document.getElementById("chat-container");
+            const thinkingMsg = document.createElement("div");
+            thinkingMsg.id = "thinking-msg";
+            thinkingMsg.className = "d-flex mb-3 flex-row-reverse text-warning";
+            thinkingMsg.innerHTML = `
+        <div class="spinner-grow spinner-grow-sm" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    `;
+            chatBox.appendChild(thinkingMsg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Remove thinking indicator
+        function removeThinkingIndicator() {
+            document.getElementById("thinking-msg")?.remove();
+        }
+
+        // Updated chat form submission handler
+        document.getElementById("chat-form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            // Rate limiting
+            if (!rateLimiter.check()) {
+                console.log("Please wait before sending another message");
+                return;
+            }
+
+            const input = document.getElementById("chat-input");
+            const message = sanitizeInput(input.value);
+            if (!message) return;
+
+            // If no current session, start a new one
+            if (!currentSessionId) {
+                await startNewChat();
+                if (!currentSessionId || !isValidSessionId(currentSessionId)) {
+                    alert("Failed to start chat session. Please try again.");
+                    return;
+                }
+            }
+
+            // Hide welcome message
+            document.getElementById("welcomeMessage")?.remove();
+
+            // Display user message
+            displayMessage(message, "user");
+
+            // Show thinking indicator
+            showThinkingIndicator();
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: currentSessionId
+                    }),
+                });
+
+                const data = await response.json();
+
+                // Remove thinking indicator
+                removeThinkingIndicator();
+
+                if (data.reply) {
+                    // Display bot response
+                    displayMessage(data.reply, "bot");
+                } else if (data.error) {
+                    console.error("Chat error:", data.error);
+                    // Display error message
+                    displayMessage("Sorry, I encountered an error. Please try again.", "bot");
+                }
+
+            } catch (error) {
+                console.error("Error getting bot reply:", error);
+                removeThinkingIndicator();
+                displayMessage("Sorry, I'm having trouble connecting. Please try again.", "bot");
+            }
+
+            // Clear input and scroll to bottom
+            input.value = "";
+            const chatBox = document.getElementById("chat-container");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        // Function to delete a chat session
+        async function deleteSession(sessionId) {
+            if (!isValidSessionId(sessionId)) {
+                console.error("Invalid session ID");
+                return;
+            }
+
+            if (!confirm("Are you sure you want to delete this chat session?")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/delete_session/${sessionId}`, {
+                    method: "DELETE"
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // If current session was deleted, clear it
+                    if (currentSessionId === sessionId) {
+                        currentSessionId = null;
+                        const chatBox = document.getElementById("chat-container");
+                        chatBox.innerHTML = "";
+                        showWelcomeMessage();
+                    }
+
+                    // Reload the page to refresh session list
+                    location.reload();
+                } else {
+                    alert("Failed to delete session: " + data.error);
+                }
+            } catch (error) {
+                console.error("Error deleting session:", error);
+                alert("Error deleting session");
+            }
+        }
+
+        // Function to update session title
+        async function updateSessionTitle(sessionId, newTitle) {
+            try {
+                const response = await fetch(`/update_session_title/${sessionId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: newTitle })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log("Session title updated");
+                    // Optionally reload the page to refresh session list
+                    location.reload();
+                } else {
+                    alert("Failed to update title: " + data.error);
+                }
+            } catch (error) {
+                console.error("Error updating session title:", error);
+                alert("Error updating session title");
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener("DOMContentLoaded", function () {
+            // Check if we're on the main chat page
+            const chatContainer = document.getElementById("chat-container");
+            if (chatContainer) {
+                // Show welcome message if no session is active
+                if (!currentSessionId) {
+                    showWelcomeMessage();
+                }
+            }
+
+            // Add event listeners for session management buttons
+            document.querySelectorAll(".load-session-btn").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const sessionId = this.getAttribute("data-session-id");
+                    loadChatHistory(sessionId);
+                });
+            });
+
+            // Add event listener for new chat button
+            const newChatBtn = document.getElementById("new-chat-btn");
+            if (newChatBtn) {
+                newChatBtn.addEventListener("click", startNewChat);
+            }
+        });
+
+        // Keyboard shortcut for new chat (Ctrl+N or Cmd+N)
+        document.addEventListener("keydown", function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+                e.preventDefault();
+                startNewChat();
+            }
+        });
+
+        // Error handler
+        window.addEventListener('error', function (e) {
+            console.error('Global error:', e.error);
+            // Prevent error details leaking to user
+            const chatBox = document.getElementById("chat-container");
+            if (chatBox) {
+                displayMessage("An error occurred. Please try again later.", "bot");
+            }
+            return false;
+        });
+
+        // Prevent common XSS vectors
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputElements = document.querySelectorAll('input, textarea');
+            inputElements.forEach(input => {
+                input.addEventListener('input', function (e) {
+                    this.value = sanitizeInput(this.value);
+                });
+            });
+        });
+    </script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>
