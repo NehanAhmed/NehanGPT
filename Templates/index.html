@@ -100,6 +100,9 @@
             padding: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            /* overflow-x:e; */
+            max-width: 240px;
+            flex-wrap: nowrap;
         }
 
         #sidebar .chat-history:hover {
@@ -133,7 +136,8 @@
             width: 42px;
             height: 42px;
             border-radius: 12px;
-            object-fit: cover;
+            object-fit:contain;
+            object-position: center;
             border: 2px solid rgba(224, 118, 2, 0.3);
         }
 
@@ -444,11 +448,10 @@
             <button id="new-chat-btn" class="btn btn-custom w-100 mb-3">
                 <i class="fa-solid fa-plus me-2"></i>New Chat
             </button>
-            <div class="account-pill d-flex align-items-center gap-3 mb-4">
-                <img src="{{ url_for('static', filename=user.profile_pic) }}" alt="Profile" class="profile-img"
+            <div class="account-pill d-flex align-items-center gap-3 mb-4">                <img src="{{ url_for('static', filename=user.profile_pic) }}" alt="Profile" class="profile-img"
                     onerror="this.src='/static/Assets/Icons/default-avatar.jpg';">
                 <div class="flex-grow-1">
-                    <div class="fw-medium text-white text-truncate">{{ session.name.split('@')[0] }}</div>
+                    <div class="fw-medium text-white text-truncate">{{ user.name }}</div>
                     <div class="account-type d-flex align-items-center">
                         <i class="fas fa-crown me-1" style="color: #E07602;"></i>
                         {{ session.account_type or "Free" }}
@@ -478,7 +481,7 @@
                 {% for session in chat_sessions %}
                 <div class="chat-history d-flex align-items-center justify-content-between mb-2 p-2"
                     title="{{ session.title }}">
-                    <button class="load-session-btn btn text-white text-start flex-grow-1 px-2"
+                    <button class="load-session-btn btn text-white text-start  px-2"
                         data-session-id="{{ session._id }}">
                         <i class="fa-regular fa-message me-2"></i>
                         <span class="text-truncate">{{ session.title }}</span>
@@ -527,30 +530,26 @@
                     <span style="font-size: 22px; padding-left: 10px;">NehanGPT</span>
                 </p>
             </div>
-
-            {% if session.email %}
+            {% if session.email%}
             <!-- Profile Dropdown if logged in -->
             <div class="dropdown">
 
                 <!-- <i class="fa-solid fa-user"></i> -->
                 <img id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false"
-                    src="{{ url_for('static', filename=user.profile_pic) }}" alt="Profile" width="30px"
-                    style="border-radius: 100%; cursor: pointer;" class="profile-img"
+                    src="{{ url_for('static', filename=user.profile_pic) }}" alt="Profile" width="35px" height="35px"
+                    style="border-radius: 300px; cursor: pointer;" class="profile-img"
                     onerror="this.src='/static/Assets/Icons/default-avatar.jpg';">
 
-                <div class="dropdown-menu dropdown-menu-end">
-                    <div>
-                        <h6 class="dropdown-header">Hello, {{ session.name.split('@')[0] }}</h6>
-                    </div>
-                    <div class="dropdown-item"><a style="text-decoration: none; color: black;"
-                            href="{{ url_for('settings') }}"><i class="fa-solid fa-gear me-2"></i>Settings</a>
-                    </div>
-                    <div>
-                        <hr class="dropdown-divider">
-                    </div>
-                    <div class="dropdown-item delete-option"><a style="text-decoration: none; color: red;"
-                            href="{{ url_for('logout') }}"><i class="fa-solid fa-sign-out-alt me-2"></i>Logout</a></div>
-                </div>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">Hello, {{ session.name.split('@')[0] }}</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('settings') }}">
+                        <i class="fa-solid fa-gear me-2"></i>Settings
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item delete-option" href="{{ url_for('logout') }}">
+                        <i class="fa-solid fa-sign-out-alt me-2"></i>Logout
+                    </a></li>
+                </ul>
 
             </div>
             {% else %}
@@ -610,22 +609,9 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const input = document.getElementById("chat-input");
-
-            input.addEventListener("keydown", function (e) {
-                // Check if the pressed key is the spacebar
-                if (e.key === " ") {
-                    // Ensure the spacebar is not prevented
-                    e.stopPropagation();
-                }
-            });
-        });
-    </script>
-    <script>
         // Security - Sanitize user input
         function sanitizeInput(input) {
-            return input.replace(/[<>]/g, '').trim();
+            return input.replace(/[<>]/g, '');
         }
 
         // Security - Validate session ID
@@ -964,7 +950,9 @@
         document.addEventListener('DOMContentLoaded', function () {
             const inputElements = document.querySelectorAll('input, textarea');
             inputElements.forEach(input => {
-                input.addEventListener('input', function (e) {
+                input.addEventListener('change', function (e) {
+                    // Only sanitize on change, not during typing
+                    // This allows spaces to be entered
                     this.value = sanitizeInput(this.value);
                 });
             });

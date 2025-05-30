@@ -366,8 +366,288 @@ a[href*="#followme"]::before {
     z-index: 1;
 }
 
-#chat-input{
-    height: 40px;
-    border-radius: 100%;
-    background: #000;
+/* Sidebar Overlay for Mobile */
+#sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    display: none;
+}
+
+#sidebar-overlay.active {
+    display: block;
+}
+
+/* Chat Input Container Styling */
+.chat-input-container {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    max-width: 800px;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.25rem;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Chat input styling */
+#chat-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    line-height: 1.5;
+    width: 100%;
+    height: auto;
+    min-height: 48px;
+    max-height: 150px;
+}
+
+#chat-input:focus {
+    outline: none;
+    border-color: #CC4604;
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 0 2px rgba(204, 70, 4, 0.2);
+}
+
+.chat-input-container button {
+    background: linear-gradient(135deg, #E07602, #CC4604);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    min-width: 48px;
+    height: 48px;
+}
+
+.chat-input-container button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(204, 70, 4, 0.2);
+}
+
+.glassmorphism {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    display: inline-block;
+    color: #fff;
+}
+
+/* Fix for dropdown menu clickable area */
+.dropdown-menu .dropdown-item {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: #212529;
+    text-align: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    cursor: pointer;
+    display: block;
+}
+
+.dropdown-menu .dropdown-item:hover, 
+.dropdown-menu .dropdown-item:focus {
+    color: #1e2125;
+    background-color: #f8f9fa;
+}
+
+.dropdown-menu .dropdown-item.delete-option,
+.dropdown-menu .dropdown-item.delete-option:hover {
+    color: #dc3545;
+}
+
+.dropdown-menu .dropdown-item.delete-option:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Enhanced Responsive Design */
+@media (max-width: 1200px) {
+    #content {
+        padding: 1.5rem;
+    }
+    
+    .chat-message {
+        max-width: 85%;
+    }
+}
+
+@media (max-width: 992px) {
+    #sidebar {
+        width: 250px;
+    }
+    
+    #content {
+        margin-left: 250px;
+    }
+    
+    #sidebar.collapsed ~ #content {
+        margin-left: 0;
+    }
+    
+    .welcome-screen h1 {
+        font-size: 2.4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+        z-index: 1050;
+    }
+    
+    #sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+    
+    #sidebar:not(.collapsed) {
+        transform: translateX(0);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    #content {
+        margin-left: 0 !important;
+        padding: 1rem;
+    }
+    
+    .chat-message {
+        max-width: 90%;
+    }
+    
+    .welcome-screen {
+        padding: 1rem;
+    }
+    
+    .welcome-screen h1 {
+        font-size: 2rem;
+    }
+    
+    .welcome-screen p {
+        font-size: 1rem;
+    }
+    
+    .navbar p {
+        font-size: 24px !important;
+    }
+    
+    .navbar p span {
+        font-size: 18px !important;
+    }
+    
+    /* Responsive chat input for tablets */
+    .chat-input-container {
+        padding: 0.75rem;
+        border-radius: 12px;
+        max-width: 95%;
+    }
+    
+    #chat-input {
+        font-size: 0.9rem;
+        padding: 10px 12px;
+        min-height: 42px;
+    }
+    
+    .chat-input-container button {
+        padding: 8px;
+        min-width: 42px;
+        height: 42px;
+    }
+}
+
+@media (max-width: 576px) {
+    .chat-message {
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+        max-width: 95%;
+    }
+    
+    .welcome-screen h1 {
+        font-size: 1.8rem;
+    }
+    
+    /* Responsive chat input for mobile */
+    .chat-input-container {
+        padding: 0.5rem;
+        border-radius: 10px;
+        max-width: 98%;
+    }
+    
+    #chat-input {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+        min-height: 38px;
+    }
+    
+    .chat-input-container button {
+        padding: 6px;
+        min-width: 38px;
+        height: 38px;
+    }
+    
+    .glassmorphism {
+        padding: 2px;
+    }
+}
+    
+    .chat-message {
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+        max-width: 95%;
+    }
+    
+    .welcome-screen h1 {
+        font-size: 1.8rem;
+    }
+    
+    .navbar p {
+        font-size: 20px !important;
+    }
+    
+    .navbar p span {
+        font-size: 16px !important;
+        padding-left: 5px !important;
+    }
+    
+    .profile-img {
+        width: 30px !important;
+        height: 30px !important;
+    }
+/* Remove stray closing brace */
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+}
+
+@media (max-width: 768px) {
+    #sidebar:not(.collapsed) ~ .sidebar-overlay {
+        display: block;
+    }
 }
